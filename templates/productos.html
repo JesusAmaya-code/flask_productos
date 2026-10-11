@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema POS - Productos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <main>
+        <h1>Sistema POS - Productos</h1>
+        <p class="descripcion">Productos registrados en el sistema.</p>
+        {% if error %}
+            <p class="mensaje error" role="alert">{{ error }}</p>
+        {% elif productos %}
+            <div class="tabla-contenedor">
+                <table>
+                    <caption>Productos disponibles</caption>
+                    <thead>
+                        <tr>
+                            {% for columna in columnas %}
+                                <th scope="col">{{ columna }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for producto in productos %}
+                            <tr>
+                                {% for valor in producto %}
+                                    <td>{{ valor if valor is not none else '—' }}</td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="mensaje">No hay productos disponibles.</p>
+        {% endif %}
+    </main>
+</body>
+</html>
