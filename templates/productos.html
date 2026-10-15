@@ -10,9 +10,25 @@
     <main>
         <h1>Sistema POS - Productos</h1>
         <p class="descripcion">Productos registrados en el sistema.</p>
+        <section aria-labelledby="agregar-titulo">
+            <h2 id="agregar-titulo">Agregar producto</h2>
+            <form method="post" action="{{ url_for('productos') }}">
+                <label for="nombre">Nombre</label>
+                <input id="nombre" name="nombre" maxlength="100" value="{{ datos.nombre }}" required>
+                <label for="precio">Precio</label>
+                <input id="precio" name="precio" type="number" min="0" max="99999999.99" step="0.01" value="{{ datos.precio }}" required>
+                <label for="stock">Stock</label>
+                <input id="stock" name="stock" type="number" min="0" max="2147483647" step="1" value="{{ datos.stock if datos.stock else '0' }}" required>
+                <button type="submit">Guardar producto</button>
+            </form>
+        </section>
+        {% if creado %}
+            <p class="mensaje exito" role="status">Producto agregado correctamente.</p>
+        {% endif %}
         {% if error %}
             <p class="mensaje error" role="alert">{{ error }}</p>
-        {% elif productos %}
+        {% endif %}
+        {% if productos %}
             <div class="tabla-contenedor">
                 <table>
                     <caption>Productos disponibles</caption>
@@ -34,7 +50,7 @@
                     </tbody>
                 </table>
             </div>
-        {% else %}
+        {% elif not error %}
             <p class="mensaje">No hay productos disponibles.</p>
         {% endif %}
     </main>
