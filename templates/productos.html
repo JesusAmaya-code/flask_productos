@@ -11,19 +11,20 @@
         <h1>Sistema POS - Productos</h1>
         <p class="descripcion">Productos registrados en el sistema.</p>
         <section aria-labelledby="agregar-titulo">
-            <h2 id="agregar-titulo">Agregar producto</h2>
-            <form method="post" action="{{ url_for('productos') }}">
+            <h2 id="agregar-titulo">{{ 'Editar producto' if editando else 'Agregar producto' }}</h2>
+            <form method="post" action="{{ url_for('editar_producto', producto_id=producto_id) if editando else url_for('productos') }}">
                 <label for="nombre">Nombre</label>
                 <input id="nombre" name="nombre" maxlength="100" value="{{ datos.nombre }}" required>
                 <label for="precio">Precio</label>
                 <input id="precio" name="precio" type="number" min="0" max="99999999.99" step="0.01" value="{{ datos.precio }}" required>
                 <label for="stock">Stock</label>
                 <input id="stock" name="stock" type="number" min="0" max="2147483647" step="1" value="{{ datos.stock if datos.stock else '0' }}" required>
-                <button type="submit">Guardar producto</button>
+                <button type="submit">{{ 'Guardar cambios' if editando else 'Guardar producto' }}</button>
+                {% if editando %}<a href="{{ url_for('productos') }}">Cancelar edición</a>{% endif %}
             </form>
         </section>
-        {% if creado %}
-            <p class="mensaje exito" role="status">Producto agregado correctamente.</p>
+        {% if creado or resultado in ['creado', 'actualizado', 'eliminado'] %}
+            <p class="mensaje exito" role="status">{{ {'creado': 'Producto agregado correctamente.', 'actualizado': 'Producto actualizado correctamente.', 'eliminado': 'Producto eliminado correctamente.'}.get(resultado, 'Producto agregado correctamente.') }}</p>
         {% endif %}
         {% if error %}
             <p class="mensaje error" role="alert">{{ error }}</p>
@@ -37,6 +38,7 @@
                             {% for columna in columnas %}
                                 <th scope="col">{{ columna }}</th>
                             {% endfor %}
+                            <th scope="col">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -45,6 +47,14 @@
                                 {% for valor in producto %}
                                     <td>{{ valor if valor is not none else '—' }}</td>
                                 {% endfor %}
+                                <td>
+                                    {% if id_indice is not none %}
+                                    <a href="{{ url_for('editar_producto', producto_id=producto[id_indice]) }}">Editar</a>
+                                    <form class="eliminar" method="post" action="{{ url_for('eliminar_producto', producto_id=producto[id_indice]) }}" onsubmit="return confirm('¿Eliminar este producto? Esta acción es permanente.');">
+                                        <button type="submit">Eliminar</button>
+                                    </form>
+                                    {% endif %}
+                                </td>
                             </tr>
                         {% endfor %}
                     </tbody>

@@ -12,15 +12,19 @@ app = Flask(__name__)
 
 @app.route("/")
 @app.route("/productos", methods=["GET", "POST"])
-def productos():
+@app.route("/productos/<int:producto_id>/editar", methods=["GET", "POST"], endpoint="editar_producto")
+@app.route("/productos/<int:producto_id>/eliminar", methods=["POST"], endpoint="eliminar_producto")
+def productos(producto_id=None):
     conexion = None
     cursor = None
     columnas = []
     filas = []
     error = None
     estado = 200
+    eliminar = request.path.endswith("/eliminar")
+    editando = producto_id is not None and not eliminar
     datos = {campo: request.form.get(campo, "").strip() for campo in ("nombre", "precio", "stock")}
-    if request.method == "POST":
+    if request.method == "POST" and not eliminar:
         try:
             precio = Decimal(datos["precio"])
             stock = int(datos["stock"])
@@ -53,13 +57,29 @@ def productos():
             connection_timeout=10,
         )
         cursor = conexion.cursor()
+        if producto_id is not None:
+            cursor.execute("SELECT id, nombre, precio, stock FROM productos WHERE id = %s", (producto_id,))
+            producto = cursor.fetchone()
+            if producto is None:
+                error = "El producto solicitado no existe."
+                estado = 404
+            elif request.method == "GET":
+                datos = dict(zip(("nombre", "precio", "stock"), producto[1:]))
         if request.method == "POST" and error is None:
-            cursor.execute(
-                "INSERT INTO productos (nombre, precio, stock) VALUES (%s, %s, %s)",
-                (datos["nombre"], precio, stock),
-            )
+            if eliminar:
+                cursor.execute("DELETE FROM productos WHERE id = %s", (producto_id,))
+            elif editando:
+                cursor.execute(
+                    "UPDATE productos SET nombre = %s, precio = %s, stock = %s WHERE id = %s",
+                    (datos["nombre"], precio, stock, producto_id),
+                )
+            else:
+                cursor.execute(
+                    "INSERT INTO productos (nombre, precio, stock) VALUES (%s, %s, %s)",
+                    (datos["nombre"], precio, stock),
+                )
             conexion.commit()
-            return redirect(url_for("productos", creado="1"))
+            return redirect(url_for("productos", resultado="eliminado" if eliminar else "actualizado" if editando else "creado"))
         cursor.execute("SELECT * FROM productos")
         columnas = [columna[0] for columna in cursor.description]
         filas = cursor.fetchall()
@@ -87,7 +107,9 @@ def productos():
 
     return render_template(
         "productos.html", columnas=columnas, productos=filas, error=error,
-        datos=datos, creado=request.args.get("creado") == "1"
+        datos=datos, editando=editando, producto_id=producto_id,
+        id_indice=columnas.index("id") if "id" in columnas else None,
+        resultado=request.args.get("resultado"), creado=request.args.get("creado") == "1"
     ), estado
 
 
